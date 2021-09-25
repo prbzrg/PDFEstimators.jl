@@ -31,7 +31,7 @@ function optimizeit(model::Union{FFJORDModel, MvnModel}, lss_f::Function, p::Vec
                 show_trace=false,
                 # extended_trace=true,
                 show_every=1,
-                # callback=nothing,
+                # callback=cb,
                 time_limit=NaN,
             )
         else
@@ -50,11 +50,10 @@ function optimizeit(model::Union{FFJORDModel, MvnModel}, lss_f::Function, p::Vec
     res
 end
 
-function lin_sca(xs::Vector; base::Float64=2.0)
-    s = sum(enumerate(reverse(xs))) do (i, x)
-        (base^(i-1)) * x
-    end
-    s / ((base^size(xs, 1)) - 1)
+function lin_sca(xs::Vector; weights_base::Float64=2.0)
+    sum(enumerate(reverse(xs))) do (i, x)
+        (weights_base ^ (i - 1)) * x
+    end / ((weights_base ^ size(xs, 1)) - 1)
 end
 
 function cb(p, l)
