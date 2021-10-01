@@ -12,23 +12,8 @@ default_ffjord_optms = [
         ),
     ),
     OptM(
-        method=ConjugateGradient(
-            alphaguess=LineSearches.InitialHagerZhang(),
-            linesearch=LineSearches.HagerZhang(),
-            eta=1/2,
-            manifold=Flat(),
-        ),
-        atol=Float64(eps(Float16)),
-        allow_f_increases=false,
-    ),
-    OptM(
-        method=BFGS(
-            alphaguess=LineSearches.InitialHagerZhang(),
-            linesearch=LineSearches.HagerZhang(),
-            manifold=Flat(),
-        ),
-        atol=Float64(eps(Float16)),
-        allow_f_increases=false,
+        method=AMSGrad(),
+        maxiters=Int64(typemax(Int8)),
     ),
 ]
 
