@@ -54,7 +54,11 @@ function MLJBase.fit(model::MvnModel, verbosity, X)
     lss_f = model.loss(x)
     res = optimizeit(model, lss_f, p)
 
-    fitresult = res
+    μ = res.u[1:n_vars]
+    Σ = Diagonal(res.u[n_vars+1:end] .^ 2)
+    learned_dist = MvNormal(μ, Σ)
+
+    fitresult = (learned_dist, res, n_vars)
     cache = nothing
     report = nothing
     fitresult, cache, report
@@ -62,25 +66,20 @@ end
 
 function MLJBase.transform(model::MvnModel, fitresult, Xnew)
     xnew = collect(MLJBase.matrix(Xnew)')
-    θ = fitresult.u
+    learned_dist, res, n_vars = fitresult
 
-    n_vars = size(θ, 1) ÷ 2
-    μ = θ[1:n_vars]
-    Σ = Diagonal(θ[n_vars+1:end] .^ 2)
-    dist = MvNormal(μ, Σ)
-
-    ynew = pdf(dist, xnew)
+    ynew = pdf(learned_dist, xnew)
     ynew = reshape(ynew, size(ynew, 1), 1)
     ynew = DataFrame(ynew, :auto)
 end
 
 function MLJBase.fitted_params(model::MvnModel, fitresult)
-    θ = fitresult.u
+    learned_dist, res, n_vars = fitresult
 
-    n_vars = size(θ, 1) ÷ 2
-    μ = θ[1:n_vars]
-    Σ = Diagonal(θ[n_vars+1:end] .^ 2)
-    dist = MvNormal(μ, Σ)
-
-    (learned_params=θ, learned_dist=dist)
+    (
+        learned_params=res.u,
+        learned_dist=learned_dist,
+        res=res,
+        n_vars=n_vars,
+    )
 end

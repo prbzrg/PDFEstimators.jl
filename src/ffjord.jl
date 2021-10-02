@@ -46,8 +46,7 @@ const default_sensealg = InterpolatingAdjoint(
 )
 
 MLJBase.@mlj_model mutable struct FFJORDModel <: PDFEstimator
-    n_vars::Int64 = 1::(_ > 0)
-    n_hidden_ratio::Int64 = 1::(_ > 0)
+    n_hidden_ratio::Int64 = 2::(_ > 0)
     tspan::Tuple{Float64, Float64} = default_tspan
     actv::Function = tanh
     basedist::Union{Distribution, Nothing} = nothing
@@ -68,17 +67,20 @@ end
 function MLJBase.fit(model::FFJORDModel, verbosity, X)
     x = collect(MLJBase.matrix(X)')
 
-    n_hidden = model.n_hidden_ratio * model.n_vars
+    n_vars = size(x, 1)
+    n_hidden = model.n_hidden_ratio * n_vars
     nn = Chain(
-        Dense(model.n_vars, n_hidden, model.actv),
+        Dense(n_vars, n_hidden, model.actv),
         Dense(n_hidden, n_hidden, model.actv),
-        Dense(n_hidden, model.n_vars, model.actv),
+        Dense(n_hidden, n_vars, model.actv),
     ) |> f64
     ffjord_mdl = FFJORD(nn, model.tspan, model.sol_met; model.basedist, model.sensealg)
     lss_f = model.loss(ffjord_mdl, x; model.regularize, model.monte_carlo)
     res = optimizeit(model, lss_f, ffjord_mdl.p)
 
-    fitresult = res
+    learned_ffjord_mdl = FFJORD(nn, model.tspan, model.sol_met; model.basedist, model.sensealg, p=res.u)
+
+    fitresult = (learned_ffjord_mdl, res, n_vars)
     cache = nothing
     report = nothing
     fitresult, cache, report
@@ -86,16 +88,9 @@ end
 
 function MLJBase.transform(model::FFJORDModel, fitresult, Xnew)
     xnew = collect(MLJBase.matrix(Xnew)')
-    θ = fitresult.u
+    learned_ffjord_mdl, res, n_vars = fitresult
 
-    n_hidden = model.n_hidden_ratio * model.n_vars
-    nn = Chain(
-        Dense(model.n_vars, n_hidden, model.actv),
-        Dense(n_hidden, n_hidden, model.actv),
-        Dense(n_hidden, model.n_vars, model.actv),
-    ) |> f64
-    ffjord_mdl = FFJORD(nn, model.tspan, model.sol_met; p=θ, model.basedist, model.sensealg)
-    logpx, λ₁, λ₂ = ffjord_mdl(xnew; model.regularize, model.monte_carlo)
+    logpx, λ₁, λ₂ = learned_ffjord_mdl(xnew; model.regularize, model.monte_carlo)
 
     ynew = exp.(logpx)
     ynew = collect(ynew')
@@ -103,7 +98,12 @@ function MLJBase.transform(model::FFJORDModel, fitresult, Xnew)
 end
 
 function MLJBase.fitted_params(model::FFJORDModel, fitresult)
-    θ = fitresult.u
+    learned_ffjord_mdl, res, n_vars = fitresult
 
-    (learned_params=θ,)
+    (
+        learned_params=res.u,
+        learned_ffjord_mdl=learned_ffjord_mdl,
+        res=res,
+        n_vars=n_vars,
+    )
 end
