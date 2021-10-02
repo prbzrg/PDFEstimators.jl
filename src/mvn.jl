@@ -2,9 +2,13 @@ export MvnModel, mvn_loss_4obj, mvn_loss_1obj
 
 default_mvn_optms = [
     OptM(
-        method=Newton(
-            alphaguess=LineSearches.InitialHagerZhang(),
-            linesearch=LineSearches.HagerZhang(),
+        method=Optim.KrylovTrustRegion(
+            initial_radius=1.0,
+            max_radius=128.0,
+            eta=1/8,
+            rho_lower=1/4,
+            rho_upper=3/4,
+            cg_tol=ATOL,
         ),
     ),
 ]

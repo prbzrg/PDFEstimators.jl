@@ -11,10 +11,6 @@ default_ffjord_optms = [
             cg_tol=ATOL,
         ),
     ),
-    OptM(
-        method=AMSGrad(),
-        maxiters=Int64(typemax(Int8)),
-    ),
 ]
 
 default_tspan = (0.0, 1.0)
