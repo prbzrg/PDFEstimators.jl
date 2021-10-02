@@ -42,6 +42,12 @@ p_loss
 end
 
 const default_ffjord_loss = ffjord_loss_4obj
+# const default_sensealg = ZygoteAdjoint()
+const default_sensealg = InterpolatingAdjoint(
+    autodiff=true,
+    chunk_size=0,
+    autojacvec=ZygoteVJP(),
+)
 
 MLJBase.@mlj_model mutable struct FFJORDModel <: PDFEstimator
     n_vars::Int64 = 1::(_ > 0)
@@ -53,6 +59,7 @@ MLJBase.@mlj_model mutable struct FFJORDModel <: PDFEstimator
     sol_met::OrdinaryDiffEqAlgorithm = Tsit5()
 
     adtype::SciMLBase.AbstractADType = GalacticOptim.AutoZygote()
+    sensealg::SciMLBase.AbstractSensitivityAlgorithm = default_sensealg
 
     optms::Vector{OptM} = default_ffjord_optms
 
@@ -70,7 +77,7 @@ function MLJBase.fit(model::FFJORDModel, verbosity, X)
         Dense(model.n_hidden, model.n_hidden, model.actv),
         Dense(model.n_hidden, model.n_vars, model.actv),
     ) |> f64
-    ffjord_mdl = FFJORD(nn, model.tspan, model.sol_met; model.basedist)
+    ffjord_mdl = FFJORD(nn, model.tspan, model.sol_met; model.basedist, model.sensealg)
     lss_f = model.loss(ffjord_mdl, x; model.regularize, model.monte_carlo)
     res = optimizeit(model, lss_f, ffjord_mdl.p)
 
@@ -89,7 +96,7 @@ function MLJBase.transform(model::FFJORDModel, fitresult, Xnew)
         Dense(model.n_hidden, model.n_hidden, model.actv),
         Dense(model.n_hidden, model.n_vars, model.actv),
     ) |> f64
-    ffjord_mdl = FFJORD(nn, model.tspan, model.sol_met; model.basedist, p=θ)
+    ffjord_mdl = FFJORD(nn, model.tspan, model.sol_met; p=θ, model.basedist, model.sensealg)
     logpx, λ₁, λ₂ = ffjord_mdl(xnew; model.regularize, model.monte_carlo)
 
     ynew = exp.(logpx)
