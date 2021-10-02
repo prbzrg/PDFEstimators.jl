@@ -51,7 +51,7 @@ const default_sensealg = InterpolatingAdjoint(
 
 MLJBase.@mlj_model mutable struct FFJORDModel <: PDFEstimator
     n_vars::Int64 = 1::(_ > 0)
-    n_hidden::Int64 = 1::(_ > 0)
+    n_hidden_ratio::Int64 = 1::(_ > 0)
     tspan::Tuple{Float64, Float64} = default_tspan
     actv::Function = tanh
     basedist::Union{Distribution, Nothing} = nothing
@@ -72,10 +72,11 @@ end
 function MLJBase.fit(model::FFJORDModel, verbosity, X)
     x = collect(MLJBase.matrix(X)')
 
+    n_hidden = model.n_hidden_ratio * model.n_vars
     nn = Chain(
-        Dense(model.n_vars, model.n_hidden, model.actv),
-        Dense(model.n_hidden, model.n_hidden, model.actv),
-        Dense(model.n_hidden, model.n_vars, model.actv),
+        Dense(model.n_vars, n_hidden, model.actv),
+        Dense(n_hidden, n_hidden, model.actv),
+        Dense(n_hidden, model.n_vars, model.actv),
     ) |> f64
     ffjord_mdl = FFJORD(nn, model.tspan, model.sol_met; model.basedist, model.sensealg)
     lss_f = model.loss(ffjord_mdl, x; model.regularize, model.monte_carlo)
@@ -91,10 +92,11 @@ function MLJBase.transform(model::FFJORDModel, fitresult, Xnew)
     xnew = collect(MLJBase.matrix(Xnew)')
     θ = fitresult.u
 
+    n_hidden = model.n_hidden_ratio * model.n_vars
     nn = Chain(
-        Dense(model.n_vars, model.n_hidden, model.actv),
-        Dense(model.n_hidden, model.n_hidden, model.actv),
-        Dense(model.n_hidden, model.n_vars, model.actv),
+        Dense(model.n_vars, n_hidden, model.actv),
+        Dense(n_hidden, n_hidden, model.actv),
+        Dense(n_hidden, model.n_vars, model.actv),
     ) |> f64
     ffjord_mdl = FFJORD(nn, model.tspan, model.sol_met; p=θ, model.basedist, model.sensealg)
     logpx, λ₁, λ₂ = ffjord_mdl(xnew; model.regularize, model.monte_carlo)
