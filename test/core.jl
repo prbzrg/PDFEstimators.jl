@@ -1,7 +1,7 @@
 function one_var_test(mdl_gen::Function)
     n_vars = 1
     data_dist = Beta(2, 4)
-    train_data = let n=15
+    train_data = let n=Int64(typemax(Int8))
         data = rand(data_dist, 1, n)
         data = collect(data')
         data = DataFrame(data, :auto)
@@ -16,7 +16,7 @@ end
 
 function multi_var_test(mdl_gen::Function; n_vars::Int64=2)
     data_dist = Dirichlet(n_vars, 4)
-    train_data = let n=15
+    train_data = let n=Int64(typemax(Int8))
         data = rand(data_dist, n)
         data = collect(data')
         data = DataFrame(data, :auto)

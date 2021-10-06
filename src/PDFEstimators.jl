@@ -2,6 +2,7 @@ module PDFEstimators
 
     using
         CUDA,
+        ComputationalResources,
         DataFrames,
         DiffEqFlux,
         DifferentialEquations,
@@ -13,6 +14,7 @@ module PDFEstimators
         KernelDensity,
         LineSearches,
         MLJBase,
+        MLJFlux,
         MLJModelInterface,
         ModelingToolkit,
         Optim,

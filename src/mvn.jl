@@ -1,18 +1,5 @@
 export MvnModel, mvn_loss_4obj, mvn_loss_1obj
 
-default_mvn_optms = [
-    OptM(
-        method=Optim.KrylovTrustRegion(
-            initial_radius=1.0,
-            max_radius=128.0,
-            eta=1/8,
-            rho_lower=1/4,
-            rho_upper=3/4,
-            cg_tol=ATOL,
-        ),
-    ),
-]
-
 function mvn_logpx(θ::Vector, data::Matrix{Float64})
     n_vars = size(θ, 1) ÷ 2
     μ = θ[1:n_vars]
@@ -41,7 +28,7 @@ const default_mvn_loss = mvn_loss_4obj
 MLJBase.@mlj_model mutable struct MvnModel <: PDFEstimator
     adtype::SciMLBase.AbstractADType = GalacticOptim.AutoZygote()
 
-    optms::Vector{OptM} = default_mvn_optms
+    optms::Vector{OptM} = default_optms
 
     loss::Function = default_mvn_loss
 end
