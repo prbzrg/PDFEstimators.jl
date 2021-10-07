@@ -1,6 +1,7 @@
 module PDFEstimators
 
     using
+        AverageShiftedHistograms,
         CUDA,
         ComputationalResources,
         DataFrames,
@@ -29,8 +30,9 @@ module PDFEstimators
     include("core.jl")
     include("actual.jl")
     include("kde.jl")
-    include("ffjord.jl")
+    include("ash.jl")
     include("mvn.jl")
+    include("ffjord.jl")
     include("utils.jl")
 
     MLJBase.metadata_pkg.(

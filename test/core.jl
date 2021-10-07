@@ -6,7 +6,7 @@ function one_var_test(mdl_gen::Function)
         data = collect(data')
         data = DataFrame(data, :auto)
     end
-    train_pred_pdf = let data=train_data, mdl=mdl_gen(1, data_dist)
+    train_pred_pdf = let data=train_data, mdl=mdl_gen(n_vars, data_dist)
         mach = machine(mdl, data)
         fit!(mach)
         pred_pdf = MLJBase.transform(mach, data)

@@ -3,7 +3,7 @@ export OptM
 abstract type PDFEstimator <: MLJBase.Unsupervised end
 
 const MAXITERS = Int64(typemax(Int8))
-const ATOL = Float64(eps(Float16))
+const ATOL = -Inf64
 const RTOL = -Inf64
 
 @with_kw struct OptM
@@ -93,7 +93,7 @@ default_optms = [
             eta=1/8,
             rho_lower=1/4,
             rho_upper=3/4,
-            cg_tol=ATOL,
+            cg_tol=sqrt(eps(0.0)),
         ),
     ),
     OptM(

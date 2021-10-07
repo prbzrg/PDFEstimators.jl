@@ -4,7 +4,7 @@ MLJBase.@mlj_model mutable struct KDEModel <: PDFEstimator end
 
 function MLJBase.fit(model::KDEModel, verbosity, X)
     n_vars = size(X, 2)
-    kde_model = kde(n_vars == 1 ? X[!, 1] : MLJBase.matrix(X))
+    kde_model = n_vars == 1 ? kde(eachcol(X)...) : kde(MLJBase.matrix(X))
 
     fitresult = (kde_model, n_vars)
     cache = nothing
@@ -15,7 +15,7 @@ end
 function MLJBase.transform(model::KDEModel, fitresult, Xnew)
     kde_model, n_vars = fitresult
 
-    ynew = n_vars == 1 ? pdf(kde_model, Xnew[!, 1]) : Diagonal(pdf(kde_model, Xnew[!, 1], Xnew[!, 2])).diag
+    ynew = n_vars == 1 ? pdf(kde_model, eachcol(Xnew)...) : Diagonal(pdf(kde_model, eachcol(Xnew)...)).diag
     ynew = reshape(ynew, size(ynew, 1), 1)
     ynew = DataFrame(ynew, :auto)
 end
