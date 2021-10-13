@@ -1,6 +1,12 @@
 export FFJORDModel, ffjord_loss_4obj, ffjord_loss_1obj
 
 default_tspan = (0.0, 1.0)
+default_sensealg = InterpolatingAdjoint(
+    ;
+    autodiff=true,
+    chunk_size=0,
+    autojacvec=ZygoteVJP(),
+)
 
 function ffjord_logpx(θ::Vector, mdl::DiffEqFlux.CNFLayer, data::Matrix{Float64}, move::MLJFlux.Mover;
         regularize::Bool=false, monte_carlo::Bool=false)
@@ -21,16 +27,8 @@ function ffjord_loss_1obj(mdl::DiffEqFlux.CNFLayer, data::Matrix{Float64}, move:
     function p_loss(θ::Vector)
         loss_1obj(ffjord_logpx(θ, mdl, data, move; regularize, monte_carlo))
     end
-p_loss
+    p_loss
 end
-
-const default_ffjord_loss = ffjord_loss_4obj
-# const default_sensealg = ZygoteAdjoint()
-const default_sensealg = InterpolatingAdjoint(
-    autodiff=true,
-    chunk_size=0,
-    autojacvec=ZygoteVJP(),
-)
 
 MLJBase.@mlj_model mutable struct FFJORDModel <: PDFEstimator
     n_hidden_ratio::Int64 = 2::(_ > 0)
@@ -48,7 +46,7 @@ MLJBase.@mlj_model mutable struct FFJORDModel <: PDFEstimator
     regularize::Bool = false
     monte_carlo::Bool = false
 
-    loss::Function = default_ffjord_loss
+    loss::Function = ffjord_loss_1obj
 
     dtype::Union{Type{Float64}, Type{Float32}, Type{Float16}} = Float64
     acceleration::AbstractResource = CPU1()::(_ in (CPU1(), CUDALibs()))

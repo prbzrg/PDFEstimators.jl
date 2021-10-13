@@ -2,15 +2,11 @@ export OptM
 
 abstract type PDFEstimator <: MLJBase.Unsupervised end
 
-const MAXITERS = Int64(typemax(Int8))
-const ATOL = -Inf64
-const RTOL = -Inf64
-
 @with_kw struct OptM
     method::Union{Optim.AbstractOptimizer, Flux.Optimise.AbstractOptimiser} = SimulatedAnnealing()
-    maxiters::Int64 = MAXITERS
-    atol::Float64 = ATOL
-    rtol::Float64 = RTOL
+    maxiters::Int64 = Int64(typemax(Int8))
+    atol::Float64 = -Inf64
+    rtol::Float64 = -Inf64
     allow_f_increases::Bool = true
 end
 
@@ -27,7 +23,7 @@ function loss_1obj(logpx)
     -mean(logpx)
 end
 
-default_optms = [
+default_optms = OptM[
     # - Flux
     OptM(
         method=AMSGrad(),
@@ -93,7 +89,7 @@ default_optms = [
             eta=1/8,
             rho_lower=1/4,
             rho_upper=3/4,
-            cg_tol=sqrt(eps(0.0)),
+            cg_tol=0.0,
         ),
     ),
     OptM(

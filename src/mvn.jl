@@ -23,14 +23,12 @@ function mvn_loss_1obj(data::Matrix{Float64})
     p_loss
 end
 
-const default_mvn_loss = mvn_loss_4obj
-
 MLJBase.@mlj_model mutable struct MvnModel <: PDFEstimator
     adtype::SciMLBase.AbstractADType = GalacticOptim.AutoZygote()
 
     optms::Vector{OptM} = default_optms
 
-    loss::Function = default_mvn_loss
+    loss::Function = mvn_loss_1obj
 end
 
 function MLJBase.fit(model::MvnModel, verbosity, X)

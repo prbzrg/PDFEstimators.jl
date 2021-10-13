@@ -6,6 +6,7 @@ module PDFEstimators
         ComputationalResources,
         DataFrames,
         DiffEqFlux,
+        DiffEqSensitivity,
         DifferentialEquations,
         Distances,
         Distributions,
