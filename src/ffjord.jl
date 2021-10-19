@@ -8,24 +8,11 @@ default_sensealg = InterpolatingAdjoint(
     autojacvec=ZygoteVJP(),
 )
 
-function ffjord_logpx(θ::Vector, mdl::DiffEqFlux.CNFLayer, data::Matrix{Float64}, move::MLJFlux.Mover;
-        regularize::Bool=false, monte_carlo::Bool=false)
-    logpx, λ₁, λ₂ = mdl(data, θ, move(randn(eltype(data), size(data))); regularize, monte_carlo)
-    logpx
-end
-
-function ffjord_loss_4obj(mdl::DiffEqFlux.CNFLayer, data::Matrix{Float64}, move::MLJFlux.Mover;
-        regularize::Bool=false, monte_carlo::Bool=false)
+function ffjord_loss(mdl::DiffEqFlux.CNFLayer, data::Matrix{Float64}, move::MLJFlux.Mover;
+        regularize::Bool=false, monte_carlo::Bool=false, rλ₁=0.01, rλ₂=0.01)
     function p_loss(θ::Vector)
-        loss_4obj(ffjord_logpx(θ, mdl, data, move; regularize, monte_carlo))
-    end
-    p_loss
-end
-
-function ffjord_loss_1obj(mdl::DiffEqFlux.CNFLayer, data::Matrix{Float64}, move::MLJFlux.Mover;
-        regularize::Bool=false, monte_carlo::Bool=false)
-    function p_loss(θ::Vector)
-        loss_1obj(ffjord_logpx(θ, mdl, data, move; regularize, monte_carlo))
+        logpx, λ₁, λ₂ = mdl(data, θ, move(randn(eltype(data), size(data))); regularize, monte_carlo)
+        mean(-logpx .+ rλ₁ * λ₁ .+ rλ₂ * λ₂)
     end
     p_loss
 end
@@ -35,6 +22,8 @@ MLJBase.@mlj_model mutable struct FFJORDModel <: PDFEstimator
     tspan::Tuple{Float64, Float64} = default_tspan
     actv::Function = tanh
     basedist::Union{Distribution, Nothing} = nothing::(isnothing(_) || eltype(_) == model.dtype)
+    rλ₁::Float64 = 0.01
+    rλ₂::Float64 = 0.01
 
     sol_met::OrdinaryDiffEqAlgorithm = Tsit5()
 
@@ -43,10 +32,10 @@ MLJBase.@mlj_model mutable struct FFJORDModel <: PDFEstimator
 
     optms::Vector{OptM} = short_optms
 
-    regularize::Bool = false
-    monte_carlo::Bool = false
+    regularize::Bool = true
+    monte_carlo::Bool = true
 
-    loss::Function = ffjord_loss_1obj
+    loss::Function = ffjord_loss
 
     dtype::Union{Type{Float64}, Type{Float32}, Type{Float16}} = Float64
     acceleration::AbstractResource = CPU1()::(_ in (CPU1(), CUDALibs()))
@@ -74,7 +63,7 @@ function MLJBase.fit(model::FFJORDModel, verbosity, X)
     nn = move(nn)
     ffjord_mdl = FFJORD(nn, tspan, model.sol_met; model.basedist, model.sensealg)
     x = move(x)
-    lss_f = model.loss(ffjord_mdl, x, move; model.regularize, model.monte_carlo)
+    lss_f = model.loss(ffjord_mdl, x, move; model.regularize, model.monte_carlo, model.rλ₁, model.rλ₂)
     res = optimizeit(model, lss_f, ffjord_mdl.p)
 
     learned_ffjord_mdl = FFJORD(nn, tspan, model.sol_met; model.basedist, model.sensealg, p=res.u)
