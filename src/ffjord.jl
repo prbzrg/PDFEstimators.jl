@@ -42,6 +42,15 @@ function ffjord_loss_rand(mdl::DiffEqFlux.CNFLayer, data::Matrix{Float64}, move:
     p_loss
 end
 
+function ffjord_loss_nobatch(mdl::DiffEqFlux.CNFLayer, data::Matrix{Float64}, move::MLJFlux.Mover;
+        regularize::Bool=false, monte_carlo::Bool=false, rλ₁::Float64=0.01, rλ₂::Float64=0.01, batch_size::Int64=32)
+    function p_loss(θ::Vector)
+        logpx, λ₁, λ₂ = mdl(data, θ, move(randn(eltype(data), size(data))); regularize, monte_carlo)
+        mean(-logpx .+ rλ₁ * λ₁ .+ rλ₂ * λ₂)
+    end
+    p_loss
+end
+
 MLJBase.@mlj_model mutable struct FFJORDModel <: PDFEstimator
     n_hidden_ratio::Int64 = 2::(_ > 0)
     tspan::Tuple{Float64, Float64} = default_tspan
@@ -60,7 +69,7 @@ MLJBase.@mlj_model mutable struct FFJORDModel <: PDFEstimator
     regularize::Bool = true
     monte_carlo::Bool = true
 
-    loss::Function = ffjord_loss_rand
+    loss::Function = ffjord_loss_nobatch
     batch_size::Int64 = 32
 
     dtype::Union{Type{Float64}, Type{Float32}, Type{Float16}} = Float64
