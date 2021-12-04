@@ -17,7 +17,7 @@ function MLJBase.transform(model::ActualModel, fitresult, Xnew)
     xnew = collect(MLJBase.matrix(Xnew)')
     n_vars = fitresult
 
-    ynew = n_vars == 1 ? pdf.(model.dist, vec(xnew)) : pdf(model.dist, xnew)
+    ynew = model.dist isa UnivariateDistribution ? pdf.(model.dist, vec(xnew)) : pdf(model.dist, xnew)
     ynew = reshape(ynew, size(ynew, 1), 1)
     ynew = DataFrame(ynew, :auto)
 end
