@@ -40,19 +40,46 @@ module PDFEstimators
         [ActualModel, KDEModel, FFJORDModel, MvnModel],
         package_name="PDFEstimators",
         package_uuid="4d826980-ec0a-4f65-a989-f1052e211ebd",
-        package_url="unknown",
+        package_url="https://github.com/prbzrg/PDFEstimators.jl",
         is_pure_julia=true,
         package_license="MIT",
         is_wrapper=false,
     )
 
-    MLJBase.metadata_model.(
-        [ActualModel, KDEModel, FFJORDModel, MvnModel],
+    MLJBase.metadata_model(
+        ActualModel,
         input_scitype=Table{AbstractVector{ScientificTypes.Continuous}},
         target_scitype=Table{AbstractVector{ScientificTypes.Continuous}},
         output_scitype=Table{AbstractVector{ScientificTypes.Continuous}},
         supports_weights=false,
-        docstring=["ActualModel", "KDEModel", "FFJORDModel", "MvnModel"],
-        load_path=["PDFEstimators.ActualModel", "PDFEstimators.KDEModel", "PDFEstimators.FFJORDModel", "PDFEstimators.MvnModel"],
+        docstring="ActualModel",
+        load_path="PDFEstimators.ActualModel",
+    )
+    MLJBase.metadata_model(
+        KDEModel,
+        input_scitype=Table{AbstractVector{ScientificTypes.Continuous}},
+        target_scitype=Table{AbstractVector{ScientificTypes.Continuous}},
+        output_scitype=Table{AbstractVector{ScientificTypes.Continuous}},
+        supports_weights=false,
+        docstring="KDEModel",
+        load_path="PDFEstimators.KDEModel",
+    )
+    MLJBase.metadata_model(
+        FFJORDModel,
+        input_scitype=Table{AbstractVector{ScientificTypes.Continuous}},
+        target_scitype=Table{AbstractVector{ScientificTypes.Continuous}},
+        output_scitype=Table{AbstractVector{ScientificTypes.Continuous}},
+        supports_weights=false,
+        docstring="FFJORDModel",
+        load_path="PDFEstimators.FFJORDModel",
+    )
+    MLJBase.metadata_model(
+        MvnModel,
+        input_scitype=Table{AbstractVector{ScientificTypes.Continuous}},
+        target_scitype=Table{AbstractVector{ScientificTypes.Continuous}},
+        output_scitype=Table{AbstractVector{ScientificTypes.Continuous}},
+        supports_weights=false,
+        docstring="MvnModel",
+        load_path="PDFEstimators.MvnModel",
     )
 end
