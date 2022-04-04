@@ -15,7 +15,7 @@ jobs:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         version:
           - '1.6'
@@ -27,7 +27,7 @@ jobs:
           - windows-latest
         arch:
           - x64
-          - x86
+          # - x86
         exclude:
           - os: macOS-latest
             arch: x86
