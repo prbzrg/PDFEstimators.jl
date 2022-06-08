@@ -3,9 +3,8 @@ export OptM
 abstract type PDFEstimator <: MLJBase.Unsupervised end
 
 @with_kw struct OptM
-    method::Union{Optim.AbstractOptimizer, Flux.Optimise.AbstractOptimiser} = NelderMead()
+    method::Any = NelderMead()
     maxiters::Int64 = Int64(typemax(Int8))
-    atol::Float64 = Float64(eps(Float32))
 end
 
 function loss_4obj(logpx)
@@ -24,7 +23,7 @@ end
 long_optms = OptM[
     # - Flux
     OptM(
-        method=AMSGrad(),
+        method=Optimisers.AMSGrad(),
     ),
     # - Optim
     # -- Zeroth order

@@ -61,7 +61,7 @@ MLJBase.@mlj_model mutable struct FFJORDModel <: PDFEstimator
 
     sol_met::OrdinaryDiffEqAlgorithm = Tsit5()
 
-    adtype::SciMLBase.AbstractADType = GalacticOptim.AutoZygote()
+    adtype::SciMLBase.AbstractADType = Optimization.AutoZygote()
     sensealg::SciMLBase.AbstractSensitivityAlgorithm = default_sensealg
 
     optms::Vector{OptM} = short_optms

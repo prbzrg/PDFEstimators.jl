@@ -24,7 +24,7 @@ function mvn_loss_1obj(data::Matrix{Float64})
 end
 
 MLJBase.@mlj_model mutable struct MvnModel <: PDFEstimator
-    adtype::SciMLBase.AbstractADType = GalacticOptim.AutoZygote()
+    adtype::SciMLBase.AbstractADType = Optimization.AutoZygote()
 
     optms::Vector{OptM} = long_optms
 
