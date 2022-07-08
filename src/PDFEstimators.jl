@@ -6,26 +6,18 @@ module PDFEstimators
         ComputationalResources,
         DataFrames,
         DiffEqFlux,
-        DiffEqSensitivity,
         DifferentialEquations,
         Distances,
         Distributions,
         Flux,
-        ForwardDiff,
         KernelDensity,
-        LineSearches,
         MLJBase,
         MLJFlux,
         MLJModelInterface,
         ModelingToolkit,
-        Optim,
-        Optimisers,
         Optimization,
-        OptimizationFlux,
-        OptimizationOptimJL,
-        OptimizationOptimisers,
+        OptimizationPolyalgorithms,
         Parameters,
-        ReverseDiff,
         SciMLBase,
         ScientificTypes,
         Zygote,
@@ -34,14 +26,14 @@ module PDFEstimators
 
     include("core.jl")
     include("actual.jl")
+    include("fitted.jl")
     include("kde.jl")
     include("ash.jl")
-    include("mvn.jl")
     include("ffjord.jl")
     include("utils.jl")
 
     MLJBase.metadata_pkg.(
-        [ActualModel, KDEModel, FFJORDModel, MvnModel],
+        [ActualModel, KDEModel, FFJORDModel, FittedModel],
         package_name="PDFEstimators",
         package_uuid="4d826980-ec0a-4f65-a989-f1052e211ebd",
         package_url="https://github.com/prbzrg/PDFEstimators.jl",
@@ -78,12 +70,12 @@ module PDFEstimators
         load_path="PDFEstimators.FFJORDModel",
     )
     MLJBase.metadata_model(
-        MvnModel,
+        FittedModel,
         input_scitype=Table{AbstractVector{ScientificTypes.Continuous}},
         target_scitype=Table{AbstractVector{ScientificTypes.Continuous}},
         output_scitype=Table{AbstractVector{ScientificTypes.Continuous}},
         supports_weights=false,
-        docstring="MvnModel",
-        load_path="PDFEstimators.MvnModel",
+        docstring="FittedModel",
+        load_path="PDFEstimators.FittedModel",
     )
 end

@@ -1,17 +1,12 @@
 export FFJORDModel, ffjord_loss_4obj, ffjord_loss_1obj
 
 default_tspan = (0.0, 1.0)
-default_sensealg = InterpolatingAdjoint(
-    ;
-    autodiff=true,
-    chunk_size=0,
-    autojacvec=ZygoteVJP(),
-)
+default_maxiters = Int64(typemax(Int8))
 
 function ffjord_loss_part_gvar(mdl::DiffEqFlux.CNFLayer, data::Matrix{Float64}, move::MLJFlux.Mover;
         regularize::Bool=false, monte_carlo::Bool=false, rλ₁::Float64=0.01, rλ₂::Float64=0.01, batch_size::Int64=32)
     global vl, itr = nothing, Base.Iterators.cycle(broadcast(x -> hcat(x...), Base.Iterators.partition(eachcol(data), batch_size)))
-    function p_loss(θ::Vector)
+    function p_loss(θ::Vector, p)
         global vl, itr = Base.Iterators.peel(itr)
         logpx, λ₁, λ₂ = mdl(vl, θ, move(randn(eltype(vl), size(vl))); regularize, monte_carlo)
         mean(-logpx .+ rλ₁ * λ₁ .+ rλ₂ * λ₂)
@@ -24,7 +19,7 @@ function ffjord_loss_part_arr(mdl::DiffEqFlux.CNFLayer, data::Matrix{Float64}, m
     vl = Any[nothing]
     itr = Any[nothing]
     vl[], itr[] = nothing, Base.Iterators.cycle(broadcast(x -> hcat(x...), Base.Iterators.partition(eachcol(data), batch_size)))
-    function p_loss(θ::Vector)
+    function p_loss(θ::Vector, p)
         vl[], itr[] = Base.Iterators.peel(itr[])
         logpx, λ₁, λ₂ = mdl(vl[], θ, move(randn(eltype(vl[]), size(vl[]))); regularize, monte_carlo)
         mean(-logpx .+ rλ₁ * λ₁ .+ rλ₂ * λ₂)
@@ -34,7 +29,7 @@ end
 
 function ffjord_loss_rand(mdl::DiffEqFlux.CNFLayer, data::Matrix{Float64}, move::MLJFlux.Mover;
         regularize::Bool=false, monte_carlo::Bool=false, rλ₁::Float64=0.01, rλ₂::Float64=0.01, batch_size::Int64=32)
-    function p_loss(θ::Vector)
+    function p_loss(θ::Vector, p)
         batch_data = hcat(rand(collect(eachcol(data)), batch_size)...)
         logpx, λ₁, λ₂ = mdl(batch_data, θ, move(randn(eltype(batch_data), size(batch_data))); regularize, monte_carlo)
         mean(-logpx .+ rλ₁ * λ₁ .+ rλ₂ * λ₂)
@@ -44,7 +39,7 @@ end
 
 function ffjord_loss_nobatch(mdl::DiffEqFlux.CNFLayer, data::Matrix{Float64}, move::MLJFlux.Mover;
         regularize::Bool=false, monte_carlo::Bool=false, rλ₁::Float64=0.01, rλ₂::Float64=0.01, batch_size::Int64=32)
-    function p_loss(θ::Vector)
+    function p_loss(θ::Vector, p)
         logpx, λ₁, λ₂ = mdl(data, θ, move(randn(eltype(data), size(data))); regularize, monte_carlo)
         mean(-logpx .+ rλ₁ * λ₁ .+ rλ₂ * λ₂)
     end
@@ -59,12 +54,9 @@ MLJBase.@mlj_model mutable struct FFJORDModel <: PDFEstimator
     rλ₁::Float64 = 0.01
     rλ₂::Float64 = 0.01
 
-    sol_met::OrdinaryDiffEqAlgorithm = Tsit5()
-
     adtype::SciMLBase.AbstractADType = Optimization.AutoZygote()
-    sensealg::SciMLBase.AbstractSensitivityAlgorithm = default_sensealg
-
-    optms::Vector{OptM} = short_optms
+    optimizer::Any = PolyOpt()
+    maxiters::Int64 = default_maxiters
 
     regularize::Bool = true
     monte_carlo::Bool = true
@@ -96,12 +88,15 @@ function MLJBase.fit(model::FFJORDModel, verbosity, X)
         nn = Flux.paramtype(model.dtype, nn)
     end
     nn = move(nn)
-    ffjord_mdl = FFJORD(nn, tspan, model.sol_met; model.basedist, model.sensealg)
+    ffjord_mdl = FFJORD(nn, tspan; model.basedist)
     x = move(x)
     lss_f = model.loss(ffjord_mdl, x, move; model.regularize, model.monte_carlo, model.rλ₁, model.rλ₂, model.batch_size)
-    res = optimizeit(model, lss_f, ffjord_mdl.p)
 
-    learned_ffjord_mdl = FFJORD(nn, tspan, model.sol_met; model.basedist, model.sensealg, p=res.u)
+    optfunc = OptimizationFunction(lss_f, model.adtype)
+    optprob = OptimizationProblem(optfunc, ffjord_mdl.p)
+    res = solve(optprob, model.optimizer; maxiters=model.maxiters)
+
+    learned_ffjord_mdl = FFJORD(nn, tspan; model.basedist, p=res.u)
 
     fitresult = (learned_ffjord_mdl, res, n_vars)
     cache = nothing

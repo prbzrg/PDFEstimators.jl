@@ -8,9 +8,9 @@ using
 @testset "Overall" begin
     include("core.jl")
     include("actual.jl")
+    include("fitted.jl")
     include("kde.jl")
     include("ash.jl")
-    include("mvn.jl")
     include("ffjord.jl")
     include("utils.jl")
 end
