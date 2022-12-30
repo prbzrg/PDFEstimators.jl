@@ -33,7 +33,7 @@ module PDFEstimators
     include("utils.jl")
 
     MLJBase.metadata_pkg.(
-        [ActualModel, KDEModel, FFJORDModel, FittedModel],
+        [ActualModel, FittedModel, KDEModel, ASHModel, FFJORDModel],
         package_name="PDFEstimators",
         package_uuid="4d826980-ec0a-4f65-a989-f1052e211ebd",
         package_url="https://github.com/prbzrg/PDFEstimators.jl",
@@ -52,6 +52,15 @@ module PDFEstimators
         load_path="PDFEstimators.ActualModel",
     )
     MLJBase.metadata_model(
+        FittedModel,
+        input_scitype=Table{AbstractVector{ScientificTypes.Continuous}},
+        target_scitype=Table{AbstractVector{ScientificTypes.Continuous}},
+        output_scitype=Table{AbstractVector{ScientificTypes.Continuous}},
+        supports_weights=false,
+        docstring="FittedModel",
+        load_path="PDFEstimators.FittedModel",
+    )
+    MLJBase.metadata_model(
         KDEModel,
         input_scitype=Table{AbstractVector{ScientificTypes.Continuous}},
         target_scitype=Table{AbstractVector{ScientificTypes.Continuous}},
@@ -61,6 +70,15 @@ module PDFEstimators
         load_path="PDFEstimators.KDEModel",
     )
     MLJBase.metadata_model(
+        ASHModel,
+        input_scitype=Table{AbstractVector{ScientificTypes.Continuous}},
+        target_scitype=Table{AbstractVector{ScientificTypes.Continuous}},
+        output_scitype=Table{AbstractVector{ScientificTypes.Continuous}},
+        supports_weights=false,
+        docstring="ASHModel",
+        load_path="PDFEstimators.ASHModel",
+    )
+    MLJBase.metadata_model(
         FFJORDModel,
         input_scitype=Table{AbstractVector{ScientificTypes.Continuous}},
         target_scitype=Table{AbstractVector{ScientificTypes.Continuous}},
@@ -68,14 +86,5 @@ module PDFEstimators
         supports_weights=false,
         docstring="FFJORDModel",
         load_path="PDFEstimators.FFJORDModel",
-    )
-    MLJBase.metadata_model(
-        FittedModel,
-        input_scitype=Table{AbstractVector{ScientificTypes.Continuous}},
-        target_scitype=Table{AbstractVector{ScientificTypes.Continuous}},
-        output_scitype=Table{AbstractVector{ScientificTypes.Continuous}},
-        supports_weights=false,
-        docstring="FittedModel",
-        load_path="PDFEstimators.FittedModel",
     )
 end
